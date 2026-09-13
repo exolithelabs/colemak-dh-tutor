@@ -1,0 +1,20 @@
+[package]
+name = "colemak-dh-tutor"
+version = "0.1.1"
+description = "A desktop touch-typing tutor for the Colemak-DH layout"
+authors = ["Exolithe Labs"]
+edition = "2021"
+license = "Apache-2.0"
+
+[lib]
+name = "colemak_dh_tutor_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+uuid = { version = "1", features = ["v4"] }

@@ -1,0 +1,52 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Colemak-DH Tutor",
+  "version": "0.1.1",
+  "identifier": "io.github.exolithelabs.ColemakDHTutor",
+  "build": {
+    "beforeDevCommand": "npm --prefix frontend run dev",
+    "devUrl": "http://localhost:5174",
+    "beforeBuildCommand": "npm --prefix frontend run build",
+    "frontendDist": "../frontend/dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Colemak-DH Tutor",
+        "width": 1180,
+        "height": 820,
+        "minWidth": 800,
+        "minHeight": 640,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost http://127.0.0.1:*; img-src 'self' asset: http://asset.localhost data:; style-src 'self' 'unsafe-inline'; font-src 'self' data:"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "deb"],
+    "publisher": "Exolithe Labs",
+    "copyright": "Copyright 2026 Exolithe Labs",
+    "category": "Education",
+    "shortDescription": "Learn the Colemak-DH keyboard layout",
+    "longDescription": "A focused desktop touch-typing tutor with progressive Colemak-DH lessons, live finger guidance, and private local progress tracking.",
+    "licenseFile": "../LICENSE",
+    "externalBin": ["binaries/colemak-backend"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "nsis": {
+        "displayLanguageSelector": false,
+        "installMode": "currentUser",
+        "installerIcon": "icons/icon.ico"
+      }
+    }
+  }
+}
