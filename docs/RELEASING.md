@@ -17,7 +17,7 @@ token or custom secret is required.
 
 Before packaging, CI validates matching application versions, runs frontend
 regression tests, and audits JavaScript dependencies. Both platform jobs compile
-the native Rust backend and test validation, migration from Python-era databases,
+the native Rust backend and test validation, unsupported-schema rejection,
 pagination, and persistence across restart. Python and PyInstaller are no longer
 part of the build. Published assets
 include a `SHA256SUMS` file. An already published release cannot be overwritten

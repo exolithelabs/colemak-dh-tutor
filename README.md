@@ -102,12 +102,13 @@ directory somewhere safe. SQLite may also create `colemak.db-wal` and
 Keeping the same application ID lets subsequent versions locate the existing
 database. Back up your progress before upgrading a prerelease.
 
-The first native-backend launch with an existing Python database (schema 0 or 1)
-creates a consistent `colemak.pre-rust-v2.db` backup using SQLite's backup API.
-The migration retains user IDs, lesson IDs, progress, and timestamps, then marks
-the database as schema 2. Databases from newer schemas are rejected. History
-loads newest first in pages of 100 results. Keep the backup if you need to return
-to the earlier Python version, which does not support schema 2.
+Fresh installs create a native SQLite database automatically. Since the app is
+still in development, Python-era databases are not migrated and no automatic
+legacy backups are created. Unsupported database schemas are rejected without
+rewriting their contents. To start fresh with an old development database, close
+the app and move `colemak.db` and its `-wal`/`-shm` files out of the app-data
+folder, then restart. Current native databases retain progress across restarts.
+History loads newest first in pages of 100 results.
 
 ## Architecture
 
@@ -173,7 +174,7 @@ the prerelease automatically. The release job uses GitHub's automatic token;
 no custom secrets are needed for the current unsigned builds. The workflow
 checks that version files and tags agree, runs frontend regression tests and
 JavaScript dependency audits, and tests the native Rust backend's validation,
-database migration, history pagination, and persistence on both operating systems.
+schema rejection, history pagination, and persistence on both operating systems.
 Actions are pinned to commit IDs. Published releases cannot be overwritten by
 a rerun; use a new version tag. Releases include `SHA256SUMS` for the packages.
 

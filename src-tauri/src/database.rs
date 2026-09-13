@@ -69,20 +69,11 @@ impl Database {
         connection.busy_timeout(Duration::from_secs(5)).map_err(storage_error)?;
         let version: i32 = connection.pragma_query_value(None, "user_version", |row| row.get(0)).map_err(storage_error)?;
         if version > SCHEMA_VERSION { return Err("This database requires a newer version of Colemak-DH Tutor.".into()); }
-        // SQLite's backup API includes committed WAL data. Never copy a live db file.
         if existed && version < SCHEMA_VERSION {
-            let backup = directory.join("colemak.pre-rust-v2.db");
-            if !backup.exists() {
-                let temporary = directory.join("colemak.pre-rust-v2.pending.db");
-                if temporary.is_symlink() { return Err("Invalid backup path.".into()); }
-                connection.backup("main", &temporary, None).map_err(storage_error)?;
-                private_permissions(&temporary, 0o600)?;
-                fs::rename(&temporary, &backup).map_err(storage_error)?;
-            }
+            return Err("Unsupported development database. Move the old colemak.db and its WAL/SHM files out of the app-data folder while the app is closed, then restart.".into());
         }
         connection.execute_batch("PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;").map_err(storage_error)?;
         let tx = connection.transaction_with_behavior(TransactionBehavior::Immediate).map_err(storage_error)?;
-        // Names and columns deliberately match the original Flask-SQLAlchemy schema.
         tx.execute_batch("CREATE TABLE IF NOT EXISTS user (
             id INTEGER PRIMARY KEY, username VARCHAR(80) NOT NULL UNIQUE, created_at DATETIME);
             CREATE TABLE IF NOT EXISTS lesson (

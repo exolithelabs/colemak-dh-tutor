@@ -10,5 +10,5 @@ The backend runs inside the Rust/Tauri process. It exposes a small set of typed
 IPC commands to the local webview, with no HTTP listener or shell plugin. Rust
 validates inputs and uses parameterized SQLite queries in the OS user-data
 directory. The database is not encrypted; security depends on the OS user account
-and filesystem permissions. Existing Python databases are backed up before the
-native backend migrates them.
+and filesystem permissions. Legacy development databases are not migrated or
+automatically backed up; unsupported schemas are rejected.

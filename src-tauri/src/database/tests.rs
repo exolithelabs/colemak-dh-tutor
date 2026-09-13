@@ -27,33 +27,16 @@ fn fresh_database_and_restart_preserve_builtin_and_custom_results() {
 }
 
 #[test]
-fn migrates_both_python_schema_versions_with_a_consistent_backup() {
+fn rejects_legacy_development_databases_without_migration() {
     for version in [0, 1] {
         let dir = tempdir().unwrap();
-        // Same schema and timestamp representation emitted by Flask-SQLAlchemy.
         let legacy = Connection::open(dir.path().join("colemak.db")).unwrap();
-        legacy.execute_batch("PRAGMA journal_mode=WAL;
-            CREATE TABLE user(id INTEGER PRIMARY KEY, username VARCHAR(80) NOT NULL UNIQUE, created_at DATETIME);
-            CREATE TABLE lesson(id INTEGER PRIMARY KEY, title VARCHAR(100) NOT NULL, content TEXT NOT NULL, level INTEGER NOT NULL);
-            CREATE TABLE progress(id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES user(id), lesson_id INTEGER NOT NULL REFERENCES lesson(id), wpm FLOAT, accuracy FLOAT, completed_at DATETIME);
-            INSERT INTO user VALUES(7,'Existing user','2026-09-01 12:00:00.000000');
-            INSERT INTO lesson VALUES(1,'Existing title','arst neio',1);
-            INSERT INTO progress VALUES(42,7,1,55.5,97.2,'2026-09-01 12:01:00.123456');").unwrap();
+        legacy.execute_batch("CREATE TABLE sentinel(value TEXT); INSERT INTO sentinel VALUES('untouched');").unwrap();
         legacy.pragma_update(None, "user_version", version).unwrap();
-        let mut db = Database::open(dir.path()).unwrap();
-        let entry = &db.progress("Existing user", 100, None).unwrap()[0];
-        assert_eq!(entry.id, 42);
-        assert_eq!(entry.wpm, 55.5);
-        assert_eq!(entry.completed_at, "2026-09-01T12:01:00.123456Z");
-        assert_eq!(db.lessons().unwrap()[0].title, "Existing title");
-        let backup = Connection::open(dir.path().join("colemak.pre-rust-v2.db")).unwrap();
-        assert_eq!(backup.query_row("SELECT count(*) FROM progress", [], |row| row.get::<_, i64>(0)).unwrap(), 1);
-        assert_eq!(backup.pragma_query_value(None, "user_version", |row| row.get::<_, i32>(0)).unwrap(), version);
-        db.save_progress(input(999, 40.0)).unwrap();
-        drop(db);
-        let reopened = Database::open(dir.path()).unwrap();
-        assert_eq!(reopened.progress("Existing user", 100, None).unwrap().len(), 1);
-        assert_eq!(backup.query_row("SELECT count(*) FROM progress", [], |row| row.get::<_, i64>(0)).unwrap(), 1);
+        assert!(Database::open(dir.path()).err().unwrap().contains("Unsupported development database"));
+        assert_eq!(legacy.pragma_query_value(None, "user_version", |row| row.get::<_, i32>(0)).unwrap(), version);
+        assert_eq!(legacy.query_row("SELECT value FROM sentinel", [], |row| row.get::<_, String>(0)).unwrap(), "untouched");
+        assert!(!dir.path().join("colemak.pre-rust-v2.db").exists());
     }
 }
 
