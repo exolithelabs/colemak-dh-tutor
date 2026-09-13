@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue';
 import Keyboard from './components/Keyboard.vue';
 import TypingArea from './components/TypingArea.vue';
+import { apiFetch, restartApplication, stopApplication } from './api';
 
 interface Lesson {
   id: number;
@@ -36,7 +37,7 @@ const setView = (view: string) => {
 
 const fetchLessons = async () => {
   try {
-    const res = await fetch('http://localhost:5000/api/lessons');
+    const res = await apiFetch('/api/lessons');
     lessons.value = await res.json();
     if (lessons.value.length > 0) {
       const savedLessonId = localStorage.getItem('currentLessonId');
@@ -53,7 +54,7 @@ const fetchHistory = async () => {
   try {
     const savedUser = localStorage.getItem('username') || 'User1';
     username.value = savedUser;
-    const res = await fetch(`http://localhost:5000/api/user/progress/${username.value}`);
+    const res = await apiFetch(`/api/user/progress/${encodeURIComponent(username.value)}`);
     history.value = await res.json();
   } catch (err) {
     console.error('Failed to fetch history', err);
@@ -66,7 +67,7 @@ const handleComplete = async (stats: { wpm: number, accuracy: number }) => {
   
   if (currentLesson.value) {
     try {
-      await fetch('http://localhost:5000/api/user/progress', {
+      await apiFetch('/api/user/progress', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -128,7 +129,7 @@ const handleFileUpload = (event: Event) => {
 const stopApp = async () => {
   if (confirm('Are you sure you want to stop the application? Both backend and frontend will be shut down.')) {
     try {
-      await fetch('http://localhost:5000/api/system/stop', { method: 'POST' });
+      await stopApplication();
     } catch (e) {
       // Expecting network error as server shuts down
     }
@@ -139,7 +140,7 @@ const stopApp = async () => {
 const restartApp = async () => {
   if (confirm('Restart the application? This will reload all processes.')) {
     try {
-      await fetch('http://localhost:5000/api/system/restart', { method: 'POST' });
+      await restartApplication();
     } catch (e) {
       // Expecting network error
     }
@@ -375,6 +376,8 @@ onMounted(() => {
 
 /* Views Content */
 .custom-view-content, .history-view-content {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -393,6 +396,7 @@ onMounted(() => {
 
 .full-height-card {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }

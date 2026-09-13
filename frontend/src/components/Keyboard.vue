@@ -166,4 +166,30 @@ const isKeyTarget = (key: string) => {
   transform: scale(0.85); /* Scale down hands to fit */
   margin-top: -30px;
 }
+
+@media (max-height: 760px) {
+  .keyboard-visualizer {
+    gap: 6px;
+  }
+
+  .keyboard-frame {
+    padding: 10px;
+  }
+
+  .key-cap {
+    width: 38px;
+    height: 38px;
+  }
+
+  .space-bar {
+    width: 250px;
+  }
+
+  .hands-view {
+    height: 125px;
+    transform: scale(0.7);
+    transform-origin: top center;
+    margin-top: -20px;
+  }
+}
 </style>

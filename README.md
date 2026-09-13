@@ -1,66 +1,87 @@
-# Colemak-DH Touch Typing Tutor
+# Colemak-DH Tutor
 
-A full-stack web application designed to help users master the Colemak-DH keyboard layout through progressive lessons and real-time visual guidance.
+A privacy-friendly desktop touch-typing tutor for the Colemak-DH keyboard
+layout. It provides progressive lessons, real-time finger guidance, custom text
+practice, and local progress history.
 
-## Features
-- **Progressive Lessons:** From home row basics to full mastery.
-- **Custom Practice:** Paste any text or upload `.txt` files to practice.
-- **Dynamic Visualizer:** Real-time keyboard and hand visualization with finger highlighting.
-- **Progress Tracking:** Saves WPM and accuracy to a local database.
-- **Web App UI:** Clean, responsive dark-themed interface with a mobile-style hamburger menu.
-- **Ergonomic Mapping:** 100% accurate finger-to-key mapping for Colemak-DH.
+## Desktop architecture
 
-## Tech Stack
-- **Frontend:** Vue.js 3, TypeScript, Vite, Vanilla CSS.
-- **Backend:** Python (Flask), Flask-SQLAlchemy, SQLite.
+- Vue 3 and TypeScript render the interface inside a Tauri v2 webview.
+- Rust owns application lifecycle and launches the Python service as a bundled
+  sidecar.
+- The sidecar binds to a random loopback port and requires a new random token
+  on every launch.
+- Progress is stored in SQLite under the operating system's per-user app-data
+  directory. No account or cloud service is used.
+- Web content cannot invoke the shell plugin. Only the narrow Rust commands in
+  `src-tauri/src/lib.rs` are exposed to the webview.
 
-## Getting Started
+## User data
 
-### Prerequisites
-- Python 3.x
-- Node.js & npm
+This repository and the installed application contain code and bundled assets
+only. On first launch, Tauri creates a private data directory for the current OS
+user and the backend creates `colemak.db` inside it. Each operating-system user
+therefore gets independent progress data; uninstalling or upgrading the app does
+not write data back into this repository.
 
-### Installation
+Typical locations are:
 
-1. **Clone the repository:**
-   ```bash
-   git clone <repository-url>
-   cd "Colemak Touch Typing"
-   ```
+- Windows: `%APPDATA%\\io.github.exolithelabs.ColemakDHTutor\\colemak.db`
+- Linux: `$XDG_DATA_HOME/io.github.exolithelabs.ColemakDHTutor/colemak.db`, or
+  `~/.local/share/io.github.exolithelabs.ColemakDHTutor/colemak.db`
+- macOS: `~/Library/Application Support/io.github.exolithelabs.ColemakDHTutor/colemak.db`
 
-2. **Setup Backend:**
-   ```bash
-   cd backend
-   python -m venv venv
-   # Windows:
-   .\venv\Scripts\activate
-   # Linux/Mac:
-   source venv/bin/activate
-   pip install -r requirements.txt
-   ```
+The exact base directory is selected by the operating system through Tauri's
+`app_data_dir` API. The Python backend requires this path at startup and has no
+fallback that can create user data in the source or installation directory.
 
-3. **Setup Frontend:**
-   ```bash
-   cd ../frontend
-   npm install
-   ```
+## Development
 
-### Running the App
+Prerequisites:
 
-1. **Recommended (Windows):**
-   Simply double-click the **`start.bat`** file in the root directory. This will:
-   - Launch the backend and frontend in the background.
-   - Automatically manage process life-cycles.
-   - Support **Stop** and **Restart** commands directly from the web app's menu.
+- Node.js 22 or newer
+- Rust 1.84 or newer
+- Python 3.11 or newer
+- Tauri's platform prerequisites
 
-2. **Manual Start:**
-   - **Backend:** `python run.py` (from root)
-   - **Frontend:** `npm run dev` (from `frontend` folder)
+Install and run on Windows:
 
-## Usage
-- Click the **☰ menu** to select lessons or access Custom Practice.
-- Use **TAB** to force focus the typing area.
-- Use **ESC** to restart the current lesson.
+```powershell
+npm.cmd install
+npm.cmd --prefix frontend install
+python -m pip install -r backend/requirements-build.txt
+npm.cmd run sidecar:windows
+npm.cmd run tauri dev
+```
+
+On Linux, replace the sidecar command with:
+
+```bash
+./scripts/build-sidecar.sh
+npm run tauri dev
+```
+
+## GitHub build and release workflow
+
+All clean tests and distributable builds run in GitHub Actions. The
+`desktop-build.yml` workflow runs for pull requests, pushes to `master`, version
+tags, and manual dispatches. It produces:
+
+- a Windows x86-64 NSIS `.exe` installer; and
+- a Linux x86-64 Flatpak bundle plus an OSTree Flatpak repository archive.
+
+Build artifacts are retained for 14 days. A tag such as `v0.1.0` also creates a
+draft GitHub Release containing both platforms' files. Review and publish that
+draft from GitHub. The workflow uses GitHub's automatic token and requires no
+custom repository secrets while builds remain unsigned. Code signing is a
+separate release decision; see `docs/RELEASING.md`.
+
+## Keyboard shortcuts
+
+- `Tab` focuses the typing input.
+- `Escape` restarts the current lesson.
 
 ## License
-MIT
+
+Licensed under the [Apache License 2.0](LICENSE). See [NOTICE](NOTICE) for
+attributions.

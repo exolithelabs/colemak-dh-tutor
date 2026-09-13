@@ -5,13 +5,34 @@ backend/__pycache__/
 *$py.class
 backend/instance/
 instance/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
 .env
+backend/build/
+backend/dist/
+*.spec.bak
 
 # Node
 frontend/node_modules/
 frontend/dist/
 frontend/dist-ssr/
 *.local
+node_modules/
+src-tauri/target/
+src-tauri/gen/
+src-tauri/binaries/*
+!src-tauri/binaries/.gitkeep
+
+# Local application control/build artifacts
+*.trigger
+flatpak-build/
+flatpak-repo/
+*.flatpak
+packaging/flatpak/input/
+dist/
 
 # IDEs
 .vscode/

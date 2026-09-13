@@ -182,7 +182,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  height: 100%;
+  min-height: 0;
   justify-content: center;
 }
 
@@ -339,5 +339,20 @@ kbd {
   font-size: 0.75rem;
   font-weight: 700;
   font-family: sans-serif;
+}
+
+@media (max-height: 760px) {
+  .typing-container {
+    gap: 10px;
+  }
+
+  .text-display-card {
+    height: 125px;
+    font-size: 1.5rem;
+  }
+
+  .scroll-container {
+    padding: 24px 30px;
+  }
 }
 </style>
