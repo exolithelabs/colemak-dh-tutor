@@ -162,11 +162,11 @@ release, and creating a tag locally does not trigger Actions until it is pushed.
 Update the version in `package.json`, `src-tauri/Cargo.toml`,
 `src-tauri/tauri.conf.json`, and the Flatpak metainfo. Keep the corresponding lock
 files consistent, and commit those changes. Then push an unused matching tag;
-for example, after updating to `0.1.1`:
+for example, after updating to `0.1.2`:
 
 ```bash
-git tag v0.1.1
-git push origin master v0.1.1
+git tag v0.1.2
+git push origin master v0.1.2
 ```
 
 After both platform jobs pass, GitHub Actions attaches the packages and publishes

@@ -1,7 +1,7 @@
 {
   "name": "colemak-dh-tutor-desktop",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.1.2",
   "scripts": {
     "dev": "npm --prefix frontend run dev",
     "build": "npm --prefix frontend run build",
