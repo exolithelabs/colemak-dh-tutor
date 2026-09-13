@@ -16,21 +16,22 @@ applications. This uses the automatic per-run `GITHUB_TOKEN`; no personal access
 token or custom secret is required.
 
 Before packaging, CI validates matching application versions, runs frontend
-regression tests, and audits Python and JavaScript dependencies. Both platform
-jobs run backend regression tests and launch the frozen Python executable to
-verify authentication, saving, and persistence across restart. Published assets
+regression tests, and audits JavaScript dependencies. Both platform jobs compile
+the native Rust backend and test validation, migration from Python-era databases,
+pagination, and persistence across restart. Python and PyInstaller are no longer
+part of the build. Published assets
 include a `SHA256SUMS` file. An already published release cannot be overwritten
 by rerunning the workflow; create a new version instead.
 
 ## Creating a release candidate
 
 Ensure the version matches in `package.json`, `src-tauri/Cargo.toml`,
-`src-tauri/tauri.conf.json`, and the Flatpak metainfo, then push the commit and a
-matching version tag:
+`src-tauri/tauri.conf.json`, their lockfiles, and the Flatpak metainfo, then push
+the commit and a matching unused version tag (for example, after bumping to 0.1.2):
 
 ```bash
-git tag v0.1.0
-git push origin master v0.1.0
+git tag v0.1.2
+git push origin master v0.1.2
 ```
 
 After both platform jobs pass, the workflow publishes the prerelease with its

@@ -24,8 +24,11 @@ macOS and ARM installers are not configured.
 | `Colemak-DH-Tutor-flatpak-repo.tar.gz` | Flatpak repository archive for maintainers |
 
 The automatically generated **Source code** archives contain project sources,
-not installers. Installed users do not need Node.js, Rust, or Python development
-tools; the Python service is bundled with the application.
+not installers. Installed users do not need development tools. The current
+source uses a native Rust backend compiled into the Tauri application, with no
+Python runtime, sidecar executable, or localhost server. Previously published
+v0.1.1 installers still use the Python backend; the native migration is available
+in subsequent Actions builds until a new release is tagged.
 
 ### Windows
 
@@ -93,16 +96,18 @@ Tauri resolves the exact path from the OS environment. The webview also stores
 small UI preferences, such as the selected lesson, in its local storage. Those
 preferences are separate from the SQLite progress database.
 
-To back up progress, fully exit the app and its backend, then copy the database
+To back up progress, fully exit the app, then copy the database
 directory somewhere safe. SQLite may also create `colemak.db-wal` and
 `colemak.db-shm` companion files; do not delete them while the app is running.
 Keeping the same application ID lets subsequent versions locate the existing
 database. Back up your progress before upgrading a prerelease.
 
-The first upgrade from an unversioned database creates a
-`colemak.pre-v1.db` backup before adding the custom-practice record and history
-index. The app rejects databases with a newer schema version rather than trying
-to modify them. History loads newest first in pages of 100 results.
+The first native-backend launch with an existing Python database (schema 0 or 1)
+creates a consistent `colemak.pre-rust-v2.db` backup using SQLite's backup API.
+The migration retains user IDs, lesson IDs, progress, and timestamps, then marks
+the database as schema 2. Databases from newer schemas are rejected. History
+loads newest first in pages of 100 results. Keep the backup if you need to return
+to the earlier Python version, which does not support schema 2.
 
 ## Architecture
 
@@ -110,26 +115,24 @@ to modify them. History loads newest first in pages of 100 results.
 | --- | --- |
 | Frontend | Vue 3, TypeScript, CSS, and Vite |
 | Desktop shell | Tauri v2 with Rust |
-| Local backend | Python Flask, served by Waitress |
-| Data storage | SQLite through Flask-SQLAlchemy / SQLAlchemy |
-| Backend packaging | PyInstaller sidecar bundled with Tauri |
+| Local backend | Rust Tauri commands, compiled into the desktop app |
+| Data storage | SQLite through rusqlite, with SQLite bundled at compile time |
+| Frontend/backend communication | Tauri IPC with typed command payloads |
 
-Rust launches the backend on a random `127.0.0.1` port and generates a fresh
-authentication token on each launch. The frontend obtains that connection through
-a Tauri command. The backend is a local component, not a hosted API. SQLite uses
-WAL mode with full synchronization, foreign-key enforcement, and a write timeout.
-The API validates hosts, browser origins, numeric inputs, and request sizes.
-Startup readiness checks are retried; progress writes are sent once to avoid
-duplicate results after a lost response. Loading and save failures are shown in
-the interface.
+The frontend invokes `get_lessons`, `get_progress`, and `save_progress` directly
+through Tauri. Rust serializes database access on a background worker and validates
+the command payloads; the webview cannot submit SQL or choose database paths.
+There are no HTTP requests, CORS configuration, API tokens, or shell plugin.
+SQLite retains WAL mode, full synchronization, foreign keys, and a write timeout.
+Failed database opens can be retried from the UI. Writes are never retried
+automatically, and loading/save failures are shown in the interface.
 
 Project layout:
 
 ```text
 frontend/           Vue interface
-backend/            Flask service, database models, and tests
-src-tauri/          Rust desktop shell and installer configuration
-scripts/            Sidecar build scripts
+src-tauri/          Rust commands, SQLite backend, tests, and desktop configuration
+scripts/            Release version checks
 packaging/flatpak/  Flatpak manifest, metadata, and packaging script
 .github/            Build/release workflow and Dependabot configuration
 docs/               Additional maintainer documentation
@@ -169,15 +172,15 @@ After both platform jobs pass, GitHub Actions attaches the packages and publishe
 the prerelease automatically. The release job uses GitHub's automatic token;
 no custom secrets are needed for the current unsigned builds. The workflow
 checks that version files and tags agree, runs frontend regression tests and
-JavaScript/Python dependency audits, and tests the actual packaged backend's
-startup, authentication, and restart persistence on both operating systems.
+JavaScript dependency audits, and tests the native Rust backend's validation,
+database migration, history pagination, and persistence on both operating systems.
 Actions are pinned to commit IDs. Published releases cannot be overwritten by
 a rerun; use a new version tag. Releases include `SHA256SUMS` for the packages.
 
 Windows code signing and Flatpak repository signing are not configured. Those
 require real signing credentials and workflow integration. See
 [the release guide](docs/RELEASING.md) for maintainer details. Dependabot is
-configured to check npm, Python, Rust, and GitHub Actions dependencies weekly.
+configured to check npm, Rust, and GitHub Actions dependencies weekly.
 
 ## Hosting a Flatpak repository
 
@@ -199,9 +202,9 @@ script is `stable`; this is independent of GitHub's prerelease label.
 
 Production packages are built by GitHub Actions. For contributors who need a
 local interactive preview, the commands below launch the desktop development
-app and build its required Python sidecar locally.
+app with its integrated Rust backend.
 
-Use Node.js 22, Python 3.12, the current stable Rust toolchain, and the native
+Use Node.js 22, the current stable Rust toolchain, and the native
 Tauri development prerequisites for your OS. Run commands from the repo root.
 
 ### Windows preview
@@ -209,8 +212,6 @@ Tauri development prerequisites for your OS. Run commands from the repo root.
 ```powershell
 npm.cmd ci
 npm.cmd --prefix frontend ci
-python -m pip install -r backend/requirements-build.txt
-npm.cmd run sidecar:windows
 npm.cmd run tauri dev
 ```
 
@@ -219,8 +220,6 @@ npm.cmd run tauri dev
 ```bash
 npm ci
 npm --prefix frontend ci
-python -m pip install -r backend/requirements-build.txt
-bash scripts/build-sidecar.sh
 npm run tauri dev
 ```
 

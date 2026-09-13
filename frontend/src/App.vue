@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import Keyboard from './components/Keyboard.vue';
 import TypingArea from './components/TypingArea.vue';
-import { apiFetch, restartApplication, stopApplication } from './api';
+import { getLessons, getProgress, saveProgress, restartApplication, stopApplication } from './api';
 
 interface Lesson { id: number; title: string; content: string; level: number }
 interface Progress { id: number; lesson_id: number; wpm: number; accuracy: number; completed_at: string }
@@ -44,13 +44,11 @@ async function fetchHistory(append = false) {
   historyLoading.value = true;
   try {
     const last = append ? history.value.at(-1) : undefined;
-    const query = last ? `?limit=100&before=${last.id}` : '?limit=100';
-    const res = await apiFetch(`/api/user/progress/${encodeURIComponent(username.value)}${query}`);
-    const entries: Progress[] = await res.json();
+    const entries = await getProgress(username.value, last?.id);
     history.value = append ? [...history.value, ...entries] : entries;
     hasMoreHistory.value = entries.length === 100;
   } catch {
-    errorMessage.value = 'Progress history could not be loaded. Retry when the local service is available.';
+    errorMessage.value = 'Progress history could not be loaded. Check free disk space, then retry.';
   } finally {
     historyLoading.value = false;
   }
@@ -61,8 +59,7 @@ async function loadApp() {
   errorMessage.value = '';
   try {
     username.value = readPreference('username') || 'User1';
-    const res = await apiFetch('/api/lessons');
-    lessons.value = await res.json();
+    lessons.value = await getLessons();
     if (!lessons.value.length) throw new Error('No lessons available.');
     const savedId = Number(readPreference('currentLessonId'));
     currentLesson.value = lessons.value.find(lesson => lesson.id === savedId) || lessons.value[0]!;
@@ -83,11 +80,7 @@ async function handleComplete(stats: { wpm: number; accuracy: number }) {
   saveMessage.value = 'Saving result…';
   const lessonId = currentLesson.value.id;
   try {
-    await apiFetch('/api/user/progress', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: username.value, lesson_id: lessonId, ...stats }),
-    });
+    await saveProgress({ username: username.value, lesson_id: lessonId, ...stats });
     saveMessage.value = 'Result saved.';
     await fetchHistory();
   } catch {

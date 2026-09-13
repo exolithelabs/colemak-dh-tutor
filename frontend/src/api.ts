@@ -1,7 +1,4 @@
 import { invoke } from '@tauri-apps/api/core';
-import { createApiFetch, type BackendConnection } from './transport';
+import { createNativeApi } from './native-api';
 
-export const apiFetch = createApiFetch(() => invoke<BackendConnection>('backend_connection'));
-
-export const stopApplication = () => invoke<void>('stop_application');
-export const restartApplication = () => invoke<void>('restart_application');
+export const { getLessons, getProgress, saveProgress, stopApplication, restartApplication } = createNativeApi(invoke);

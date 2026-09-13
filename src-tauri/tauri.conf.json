@@ -22,7 +22,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost http://127.0.0.1:*; img-src 'self' asset: http://asset.localhost data:; style-src 'self' 'unsafe-inline'; font-src 'self' data:"
+      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost; img-src 'self' asset: http://asset.localhost data:; style-src 'self' 'unsafe-inline'; font-src 'self' data:"
     }
   },
   "bundle": {
@@ -34,7 +34,6 @@
     "shortDescription": "Learn the Colemak-DH keyboard layout",
     "longDescription": "A focused desktop touch-typing tutor with progressive Colemak-DH lessons, live finger guidance, and private local progress tracking.",
     "licenseFile": "../LICENSE",
-    "externalBin": ["binaries/colemak-backend"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
